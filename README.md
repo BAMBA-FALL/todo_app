@@ -36,6 +36,7 @@ Le but n'est pas la complexité de l'application, mais la **maîtrise des techno
 
 ### DevOps & Cloud
 - Docker & Docker Compose
+- Kubernetes (K8s)
 - GitHub Actions (CI/CD)
 - AWS EC2
 - Docker Hub
@@ -416,7 +417,7 @@ MIT
 
 ## 👤 Auteur
 
-Votre Nom - [GitHub](https://github.com/BAMBA-FALL)
+[GitHub](https://github.com/BAMBA-FALL)
 
 ---
 
