@@ -1,0 +1,68 @@
+Pour mettre en place un pipeline CI/CD pour votre application Docker, nous allons utiliser GitHub Actions. Voici un exemple de fichier de configuration .yml que vous pouvez utiliser :
+
+Fichier : .github/workflows/deploy.yml
+
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/todo-app-backend ./backend
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/todo-app-frontend ./frontend
+          docker push ${{ secrets.DOCKER_USERNAME }}/todo-app-backend
+          docker push ${{ secrets.DOCKER_USERNAME }}/todo-app-frontend
+
+      - name: Deploy to EC2
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          source: "docker-compose.yml"
+          target: "/home/ec2-user/todo_app/docker-compose.yml"
+
+      - name: Run Docker Compose
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            cd /home/ec2-user/todo_app
+            docker-compose pull
+            docker-compose up -d
+
+Explications :
+
+1. Le fichier .yml définit un workflow GitHub Actions qui se déclenche lorsque du code est poussé sur la branche main.
+2. Le workflow construit et pousse les images Docker pour le backend et le frontend sur Docker Hub.
+3. Il déploie ensuite le fichier docker-compose.yml sur l'instance EC2 en utilisant l'action scp.
+4. Enfin, il exécute les commandes Docker Compose pour tirer les dernières images et les lancer en mode détaché.
+
+Secrets :
+
+- Vous devez définir les secrets suivants dans votre dépôt GitHub :
+    - DOCKER_USERNAME : votre nom d'utilisateur Docker Hub
+    - DOCKER_PASSWORD : votre mot de passe Docker Hub
+    - EC2_HOST : l'adresse IP ou le nom de domaine de votre instance EC2
+    - EC2_USERNAME : le nom d'utilisateur pour se connecter à votre instance EC2
+    - EC2_PRIVATE_KEY : la clé privée pour se connecter à votre instance EC2
+
+Assurez-vous de remplacer les valeurs par défaut par vos propres informations d'identification et de configuration.
